@@ -1,0 +1,11 @@
+{
+    "github.copilot.enable": {
+        "*": false
+    },
+    "java.debug.settings.onBuildFailureProceed": true,
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.configuration.updateBuildConfiguration": "interactive",
+    //"java.compile.nullAnalysis.mode": "disabled",
+    //"java.completion.enabled": false,
+    //"java.validation.enabled": false
+}
