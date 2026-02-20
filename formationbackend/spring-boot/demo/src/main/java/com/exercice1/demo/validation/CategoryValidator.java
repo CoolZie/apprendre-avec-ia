@@ -1,6 +1,6 @@
 package com.exercice1.demo.validation;
 
-import com.exercice1.demo.model.Category;
+import com.exercice1.demo.model.enums.Category;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

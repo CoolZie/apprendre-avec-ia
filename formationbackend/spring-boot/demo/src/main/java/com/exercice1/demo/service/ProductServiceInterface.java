@@ -7,7 +7,7 @@ import com.exercice1.demo.dto.PagedResponse;
 import com.exercice1.demo.dto.ProductRequest;
 import com.exercice1.demo.dto.ProductResponse;
 import com.exercice1.demo.dto.ProductStatistics;
-import com.exercice1.demo.model.Category;
+import com.exercice1.demo.model.enums.Category;
 
 public interface ProductServiceInterface {
     List<ProductResponse> getAllProducts();

@@ -18,8 +18,8 @@ import com.exercice1.demo.dto.ProductStatistics;
 import com.exercice1.demo.exception.DuplicateResourceException;
 import com.exercice1.demo.exception.InvalidDataException;
 import com.exercice1.demo.exception.ResourceNotFoundException;
-import com.exercice1.demo.model.Category;
 import com.exercice1.demo.model.Product;
+import com.exercice1.demo.model.enums.Category;
 import com.exercice1.demo.repository.ProductRepository;
 
 import lombok.RequiredArgsConstructor;

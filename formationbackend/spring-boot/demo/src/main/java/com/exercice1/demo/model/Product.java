@@ -2,6 +2,8 @@ package com.exercice1.demo.model;
 
 import java.time.LocalDateTime;
 
+import com.exercice1.demo.model.enums.Category;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

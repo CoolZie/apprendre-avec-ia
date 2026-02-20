@@ -87,9 +87,9 @@ Chaque module comprend : théorie, exercices pratiques, mini-projet et correctio
 - ✅ `spring-boot/EXERCICE1.md` - CRUD basique (85/100)
 - ✅ `spring-boot/EXERCICE2.md` - Validation et exceptions avancées (98/100) ⭐
 - ✅ `spring-boot/EXERCICE3.md` - Recherche et pagination (100/100) ⭐⭐
-- 📝 `spring-boot/EXERCICE4.md` - Documentation Swagger/OpenAPI (bonus - optionnel)
-- 📝 `spring-boot/MINI_PROJET_ECOMMERCE.md` - **EN COURS - Mini-projet API e-commerce**
-- ✅ `spring-boot/demo/` - Projet Spring Boot avec Swagger opérationnel
+- ✅ `spring-boot/EXERCICE4.md` - Documentation Swagger/OpenAPI (95/100) ⭐⭐
+- 📝 `spring-boot/MINI_PROJET_ECOMMERCE.md` - **PROCHAINE ÉTAPE - Mini-projet API e-commerce**
+- ✅ `spring-boot/demo/` - Projet Spring Boot avec documentation Swagger complète
 
 **✅ Progression Exercice 1 (4 février 2026) :**
 
@@ -284,30 +284,271 @@ Chaque module comprend : théorie, exercices pratiques, mini-projet et correctio
    - Exercices pratiques de documentation
    - **Note** : Exercice bonus optionnel, Swagger fonctionne déjà
 
-📝 **Jour 7-10 : Mini-projet e-commerce** (EN COURS - 18 février)
-   - 🛒 MINI_PROJET_ECOMMERCE.md créé
-   - API complète avec 4 entités (Customer, Order, OrderItem, Product)
-   - Relations JPA complexes (@OneToMany, @ManyToOne)
-   - Logique métier avancée (gestion stock, calcul totaux, statuts)
-   - 12 endpoints REST minimum
-   - Statistiques e-commerce
-   - **Action** : Ouvre MINI_PROJET_ECOMMERCE.md et commence l'étape 1
+**✅ Exercice 4 : Documentation Swagger/OpenAPI complété (18 février) :**
+
+1. ✅ **ProductController documenté**
+   - 14 endpoints avec @Operation (summary + description)
+   - @ApiResponses avec codes HTTP appropriés (200, 201, 204, 400, 404, 409)
+   - Organisation par tags : "1. CRUD de base", "2. Recherche et filtrage", "3. Statistiques", "4. Compatibilité"
+   - Descriptions améliorées et corrections orthographiques
+   - Suppression des schémas incorrects dans @Content
+
+2. ✅ **OpenApiConfig personnalisé**
+   - Déplacé dans package config/
+   - Titre : "Product Management API"
+   - Description complète de l'API
+   - Contact : équipe backend formation
+   - 2 serveurs : développement + production
+   - Licence MIT
+
+3. ✅ **DTOs entièrement documentés**
+   - ProductRequest : 5 champs avec @Schema (description, example, requiredMode)
+   - ProductResponse : 8 champs documentés avec exemples
+   - PagedResponse<T> : 9 champs de pagination documentés
+   - ProductStatistics : 6 champs statistiques
+   - CategoryStatistics : 4 champs par catégorie
+
+4. ✅ **Résultat dans Swagger UI**
+   - Documentation interactive complète
+   - Schémas JSON générés automatiquement
+   - Exemples de requêtes/réponses
+   - Endpoints groupés par fonctionnalité
+   - Interface professionnelle et claire
+
+**Score : 95/100** ⭐⭐⭐⭐⭐
+
+**Compétences acquises :**
+- Annotations OpenAPI (@Operation, @ApiResponse, @Schema, @Tag)
+- Configuration personnalisée OpenAPI
+- Organisation de la documentation par tags
+- Documentation des DTOs avec exemples
+- Codes HTTP appropriés par type d'opération
+- Bonnes pratiques de documentation d'API
+
+**✅ Jour 7-10 : Mini-projet e-commerce** (COMPLÉTÉ - 18 février)
+
+**Objectif :** Créer une API REST complète de gestion de commandes e-commerce
+
+**Architecture implémentée :**
+
+1. ✅ **4 Entités JPA créées**
+   - **Customer** : id, firstName, lastName, email, phone, address, createdAt, orders[]
+   - **Order** : id, customer, orderDate, status (enum), totalAmount, items[]
+   - **OrderItem** : id, order, product, quantity, unitPrice, subtotal
+   - **Product** : (existant, enrichi pour le projet)
+   - Relations bidirectionnelles : Customer ↔ Order, Order ↔ OrderItem
+
+2. ✅ **4 Repositories Spring Data JPA**
+   - CustomerRepository : méthodes de base JPA
+   - OrderRepository : findByCustomerId, findByStatus, countByStatus, calculateTotalRevenue
+   - OrderItemRepository : méthodes de base
+   - ProductRepository : (déjà complet)
+   - Requêtes personnalisées avec @Query JPQL
+
+3. ✅ **3 Services avec logique métier**
+   - **CustomerService** : CRUD complet, getCustomerOrders, validation suppression (pas de commandes)
+   - **OrderService** : création avec déduction stock, gestion statuts, annulation, statistiques
+   - **ProductService** : (déjà existant)
+   - Gestion transactionnelle avec @Transactional
+
+4. ✅ **3 Controllers REST (27 endpoints total)**
+   
+   **CustomerController (6 endpoints) :**
+   - POST `/api/customers` - Créer un client
+   - GET `/api/customers/{id}` - Détail d'un client
+   - GET `/api/customers` - Liste paginée avec tri
+   - PUT `/api/customers/{id}` - Modifier un client
+   - DELETE `/api/customers/{id}` - Supprimer (validation : aucune commande)
+   - GET `/api/customers/{id}/orders` - Historique commandes paginé
+   
+   **OrderController (7 endpoints) :**
+   - POST `/api/orders` - Créer une commande (avec déduction stock automatique)
+   - GET `/api/orders/{id}` - Détail d'une commande avec items
+   - GET `/api/orders` - Liste paginée des commandes
+   - PATCH `/api/orders/{id}/status` - Modifier le statut
+   - DELETE `/api/orders/{id}` - Annuler une commande (statut = CANCELLED)
+   - GET `/api/orders/status/{status}` - Filtrer par statut (PENDING, SHIPPED, DELIVERED, CANCELLED)
+   - GET `/api/orders/statistics` - Statistiques (total ventes, revenus)
+   
+   **ProductController (14 endpoints)** : déjà complet
+
+5. ✅ **DTOs avec validation Jakarta**
+   - CustomerRequest : @NotBlank, @Email, @Pattern (téléphone 10 chiffres), @Size
+   - CustomerResponse : constructeur depuis entité Customer
+   - OrderRequest : customerId + liste OrderItemRequest
+   - OrderItemRequest : productId + quantity
+   - OrderResponse : inclut liste OrderItemResponse avec détails produits
+   - OrderItemResponse : product, quantity, unitPrice, subtotal
+   - OrderStatisticsResponse : totalOrders, totalRevenue
+
+6. ✅ **Logique métier avancée implémentée**
+   - **Gestion stock automatique** : vérification stock >= quantité avant commande
+   - **Déduction stock** : product.stock -= quantity pour chaque item
+   - **Exception métier** : InsufficientStockException si stock insuffisant
+   - **Calcul automatique** : subtotal calculé dans @PrePersist/@PreUpdate (quantity × unitPrice)
+   - **Total commande** : calculé avec Stream.mapToDouble().sum() sur items
+   - **Statuts commandes** : PENDING par défaut, transitions contrôlées
+   - **Validation métier** : empêche modification commande DELIVERED (OrderCancelledException)
+   - **Suppression client** : exception si commandes existantes (CustomerException)
+
+7. ✅ **Exceptions métier personnalisées**
+   - InsufficientStockException : extends RuntimeException (stock insuffisant)
+   - OrderCancelledException : tentative modification commande livrée
+   - CustomerException : suppression client avec historique de commandes
+
+8. ✅ **Corrections autonomes effectuées**
+   - Bug routes REST : @PathVariable vs @RequestParam cohérents
+   - OrderResponse.totalAmount : ligne ajoutée dans constructeur
+   - Warnings Lombok @Builder : liste initialisée dans @PrePersist (Customer)
+   - CustomerService.updateCustomer : mise à jour champs existants au lieu de créer nouveau
+   - OrderService : vérification stock avec >= au lieu de > (permet achat total stock)
+   - Routes cohérentes : {id} partout dans OrderController
+   - CustomerService.createCustomer : bug copier-coller corrigé (.getLastName() au lieu de .getFirstName())
+   - Import inutilisé lombok.Builder supprimé dans Order.java
+
+**Score : 95/100** ⭐⭐⭐⭐⭐
+
+**Détails de notation :**
+- Architecture (20/20) : Couches bien séparées, structure professionnelle
+- Entités JPA (20/20) : Relations bidirectionnelles correctes, FetchType appropriés
+- Repositories (20/20) : Requêtes @Query avancées, méthodes dérivées
+- Services (19/20) : Logique métier complexe bien implémentée
+- Controllers (18/20) : 27 endpoints REST cohérents (225% de l'exigence)
+- DTOs (20/20) : Validation complète, séparation Request/Response
+- Exceptions (18/20) : Exceptions métier pertinentes, gestion appropriée
+- Code Quality (20/20) : Code propre, bugs corrigés, pas d'erreurs compilation
+
+**Compétences acquises :**
+- Relations JPA complexes (@OneToMany bidirectionnel, @ManyToOne)
+- Gestion de transactions distribuées (stock + commande)
+- Calculs automatiques avec @PrePersist/@PreUpdate
+- Logique métier e-commerce (stock, commandes, statuts, totaux)
+- Statistiques avec agrégations JPQL (SUM, COUNT)
+- Debugging et auto-correction (9 bugs identifiés et corrigés)
+- Validation métier avancée (règles business)
+- Exceptions métier personnalisées
+- Architecture complète API e-commerce
+
+**Points forts du projet :**
+- ✅ 27 endpoints REST fonctionnels (225% de l'objectif)
+- ✅ Architecture en couches respectée
+- ✅ Gestion transactionnelle correcte
+- ✅ Code propre sans erreurs de compilation
+- ✅ Relations JPA bidirectionnelles maîtrisées
+- ✅ Logique métier complexe (stock, totaux automatiques)
+- ✅ Exceptions métier appropriées
+- ✅ Requêtes JPQL personnalisées pour filtrage et statistiques
+- ✅ Pagination sur tous les endpoints de liste
+- ✅ Validation Jakarta complète
 
 ---
 
-## 📅 Modules à venir
+## 🔄 Module en cours
 
-### Module 4 : Spring Security
+### Module 4 : Spring Security 
 **Durée estimée : 1.5 semaine**
+**Date de début : 18 février 2026**
 
-- Authentification et autorisation
-- JWT (JSON Web Tokens)
-- Password encoding (BCrypt)
-- Roles et permissions
-- OAuth2 et OpenID Connect
-- CORS et CSRF
+**Objectifs :**
+- ✅ Comprendre l'authentification et l'autorisation
+- ✅ Implémenter JWT (JSON Web Tokens)
+- ✅ Maîtriser le password encoding (BCrypt)
+- 🔄 Gérer les roles et permissions
+- ⏳ Comprendre OAuth2 et OpenID Connect
+- ⏳ Configurer CORS et CSRF
 
-**Mini-projet :** Système d'authentification complet
+**Fichiers créés :**
+- 📘 `spring-security/COURS_SPRING_SECURITY.md` - Documentation complète
+- ✅ `spring-security/EXERCICE1.md` - JWT Authentication basique
+- 📝 `spring-security/EXERCICE2.md` - Roles et @PreAuthorize
+- 📝 `spring-security/EXERCICE3.md` - Refresh tokens, logout, rate limiting
+- 📝 `spring-security/MINI_PROJET.md` - Blog platform avec 4 roles
+- ✅ `spring-boot/demo/src/main/java/com/exercice1/security/` - Implémentation JWT complète
+
+**✅ Progression Exercice 1 (18-20 février 2026) :**
+
+1. ✅ **Architecture Spring Security créée**
+   - config/ : SecurityConfig.java, ApplicationConfig.java
+   - security/ : JwtService.java, JwtAuthenticationFilter.java
+   - model/ : User.java avec rôles
+   - repository/ : UserRepository.java
+   - service/ : UserDetailsServiceImpl.java
+   - controller/ : AuthController.java (3 endpoints REST)
+   - dto/ : RegisterRequest.java, LoginRequest.java, AuthResponse.java
+   - exception/ : SecurityExceptionHandler.java
+
+2. ✅ **JWT Authentication implémentée**
+   - JwtService : génération et validation tokens JWT (JJWT 0.12.3)
+   - JwtAuthenticationFilter : filtre OncePerRequestFilter pour validation Bearer tokens
+   - Sécurisation avec clé secrète HMAC-SHA256
+   - Claims personnalisés : roles inclus dans le token
+   - Expiration configurable (24h par défaut)
+
+3. ✅ **Endpoints REST d'authentification**
+   - POST /api/auth/register : inscription nouvel utilisateur
+   - POST /api/auth/login : connexion avec JWT en réponse
+   - GET /api/auth/me : profil utilisateur connecté (@AuthenticationPrincipal)
+
+4. ✅ **Password Encoding BCrypt**
+   - BCryptPasswordEncoder avec strength 12
+   - Hachage sécurisé des mots de passe
+   - Bean unique dans ApplicationConfig
+
+5. ✅ **Gestion des roles**
+   - User.roles : Set<String> persisté avec @ElementCollection
+   - Table de jointure user_roles créée automatiquement
+   - Conversion correcte vers GrantedAuthority
+   - Pas de double préfixe "ROLE_ROLE_"
+
+6. ✅ **Corrections appliquées (auto-correction + feedback)**
+   - Bug #1 : JwtAuthenticationFilter non activé dans SecurityConfig (CRITIQUE)
+   - Bug #2 : User.roles sans annotations JPA @ElementCollection
+   - Bug #3 : .roles() causant double préfixe → remplacé par .authorities()
+   - Bug #4 : Endpoint /api/auth/me manquant
+   - Bug #5 : Duplication bean PasswordEncoder (SecurityConfig + ApplicationConfig)
+   - Bug #6 : Import UsernameNotFoundException manquant
+   - Bug #7 : Imports inutilisés nettoyés
+
+7. ✅ **Tests application**
+   - Application Spring Boot démarrée avec succès
+   - Aucune erreur de compilation (seulement 3 warnings @NonNull style)
+   - Endpoints accessibles et fonctionnels
+   - JWT tokens générés et validés correctement
+
+**Score : 118/120 (98.3%)** ⭐⭐⭐⭐⭐
+
+**Détails de notation :**
+- Architecture (20/20) : Structure Spring Security professionnelle
+- JWT Implementation (20/20) : JJWT 0.12.3 correctement configuré
+- Filter Configuration (18/20) : Bug initial (filter non activé) mais corrigé
+- User Entity (19/20) : Relations correctes après ajout @ElementCollection
+- Authentication (20/20) : Endpoints login/register/me complets
+- Password Encoding (20/20) : BCrypt strength 12 configuré
+- Exception Handling (20/20) : GlobalExceptionHandler avec tous les cas
+- Code Quality (19/20) : Code propre, corrections autonomes (6/7 bugs)
+
+**Compétences acquises :**
+- Configuration Spring Security avec SecurityFilterChain
+- Implémentation JWT avec JJWT library
+- Création de filtres personnalisés (OncePerRequestFilter)
+- UserDetailsService et authentification personnalisée
+- Gestion sécurisée des mots de passe (BCrypt)
+- JPA @ElementCollection pour collections
+- Debugging et auto-correction (6 bugs sur 7 corrigés seul)
+- Architecture stateless avec JWT
+
+**Points forts :**
+- ✅ Architecture Spring Security complète et bien structurée
+- ✅ JWT implémenté selon les bonnes pratiques
+- ✅ Bonne séparation des responsabilités (config, service, filter)
+- ✅ Configuration stateless appropriée pour API REST
+- ✅ Gestion des exceptions professionnelle
+- ✅ Auto-correction efficace (86% des bugs résolus seul)
+
+**Prochaine étape : Exercice 2**
+- Implémenter multi-roles (USER, MODERATOR, ADMIN)
+- Ajouter @PreAuthorize sur endpoints
+- Créer ProductController avec permissions par rôle
 
 ---
 
@@ -384,17 +625,22 @@ Chaque module comprend : théorie, exercices pratiques, mini-projet et correctio
 ## 📊 Progression globale
 
 ```
-[████████████████████████████████] 75%
+[████████████████████████████████████] 85%
 
 ✅ Module 1 : Java Fondamental (100%)
 ✅ Module 2 : JPA/Hibernate (100%) 🎉
-🔄 Module 3 : Spring Boot (75% → 90% en cours)
+✅ Module 3 : Spring Boot (100%) 🎉 ⭐⭐
    ✅ Exercice 1 : CRUD basique (85/100) ✓
    ✅ Exercice 2 : Validation avancée (98/100) ✓ ⭐
    ✅ Exercice 3 : Recherche et pagination (100/100) ✓ ⭐⭐
-   🔄 Mini-projet : API e-commerce complète (0/100 → EN COURS)
-   ✅ Bonus : Swagger UI opérationnel
-⏳ Module 4 : Spring Security (0%)
+   ✅ Exercice 4 : Documentation Swagger/OpenAPI (95/100) ✓ ⭐⭐
+   ✅ Mini-projet : API e-commerce complète (95/100) ✓ 🏆 ⭐⭐
+🔄 Module 4 : Spring Security (33%)
+   ✅ Cours théorique : JWT, BCrypt, Roles (100%) ✓
+   ✅ Exercice 1 : JWT Authentication (118/120 - 98.3%) ✓ ⭐⭐
+   📝 Exercice 2 : Roles et permissions (0%)
+   📝 Exercice 3 : Refresh tokens et sécurité avancée (0%)
+   📝 Mini-projet : Blog platform multi-roles (0%)
 ⏳ Module 5 : SQL Avancé (0%)
 ⏳ Module 6 : Tests (0%)
 ⏳ Module 7 : Architecture (0%)
@@ -409,13 +655,14 @@ Chaque module comprend : théorie, exercices pratiques, mini-projet et correctio
 ### Court terme (1 mois)
 - ✅ Maîtriser Java Streams et Collections
 - ✅ Comprendre JPA et les relations entre entités
-- 🔄 Créer des APIs REST avec Spring Boot (en cours - 75%)
+- ✅ Créer des APIs REST avec Spring Boot (100%)
 - ✅ Valider les données et gérer les exceptions professionnellement
 - ✅ Implémenter pagination, recherche et statistiques
-- 🔄 Développer une API e-commerce complète avec relations complexes (EN COURS)
+- ✅ Développer une API e-commerce complète avec relations complexes
+- 🔄 Sécuriser les APIs avec Spring Security et JWT (33%)
 
 ### Moyen terme (3 mois)
-- Développer des APIs sécurisées et testées
+- 🔄 Développer des APIs sécurisées et testées (en cours)
 - Appliquer les bonnes pratiques d'architecture
 - Optimiser les performances et la résilience
 
@@ -531,22 +778,27 @@ Chaque module comprend : théorie, exercices pratiques, mini-projet et correctio
 
 ## 🚀 Prochaine étape
 
-**Action immédiate : Mini-projet e-commerce 🛒**
+**Action immédiate : Module 4 - Exercice 2 : Roles et Permissions 🔐**
 
-1. ✅ Swagger fonctionne : http://localhost:8080/swagger-ui/index.html
-2. 📖 **Ouvre `spring-boot/MINI_PROJET_ECOMMERCE.md`**
-3. 🏗️ **Commence l'Étape 1** : Créer les 4 entités (Customer, Order, OrderItem, OrderStatus)
-4. 📝 Suis les TODO dans l'ordre
-5. 🧪 Teste avec Swagger UI au fur et à mesure
+1. ✅ Exercice 1 JWT Authentication complété (118/120) ⭐⭐
+2. 📖 **Ouvre `spring-security/EXERCICE2.md`**
+3. 🏗️ **Objectif** : Ajouter la gestion des rôles (USER, MODERATOR, ADMIN)
+4. 🔧 **Tâches principales** :
+   - Ajouter plusieurs rôles à l'entité User
+   - Créer un ProductController avec endpoints protégés
+   - Utiliser @PreAuthorize pour sécuriser par rôle
+   - Implémenter hasRole() et hasAnyRole()
+   - Tester avec différents utilisateurs/rôles
+5. 🧪 Teste avec Postman ou curl
 
-**Objectif** : API e-commerce complète avec :
-- Gestion des clients
-- Création de commandes avec plusieurs produits
-- Gestion des stocks automatique
-- Calcul des totaux
-- Statistiques de vente
+**Durée estimée** : 2-3 heures
 
-**Durée estimée** : 4-6 heures
+**Concepts à maîtriser :**
+- Annotation @PreAuthorize
+- Expression SpEL pour sécurité
+- hasRole() vs hasAuthority()
+- Hiérarchie des rôles
+- Tests de permissions
 
 **Commande pour me solliciter :**
 - "Corrige mon code"
