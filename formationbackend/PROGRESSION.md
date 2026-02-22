@@ -550,6 +550,16 @@ Chaque module comprend : théorie, exercices pratiques, mini-projet et correctio
 - Ajouter @PreAuthorize sur endpoints
 - Créer ProductController avec permissions par rôle
 
+**🔍 Mise à jour de vérification (22 février 2026) :**
+
+- ✅ Audit technique Exercice 2 effectué
+- ✅ Correction appliquée : vérification owner dans `@PreAuthorize` via `@securityUtils.isCurrentUser(#id, authentication)`
+- ✅ Exercice 2 validé techniquement avec tests RBAC (403/200) sur rôles USER/MODERATOR/ADMIN
+- ✅ Configuration Security ajustée pour endpoints publics Exercice 3 (`/refresh`, `/verify/**`, `/resend-verification`)
+- ✅ Exercice 3 implémenté : refresh token, email verification, logout, change password, rate limiting
+- ✅ Tests Exercice 3 ajoutés et passants (`Ex3SecurityFlowTests` : scénarios refresh/verify/resend/login bloqué/change-password)
+- ✅ Gestion d'erreur améliorée : `AccountBlockedException` retourne désormais HTTP 429 (au lieu de 500)
+
 ---
 
 ### Module 5 : SQL Avancé et Optimisation
@@ -635,11 +645,11 @@ Chaque module comprend : théorie, exercices pratiques, mini-projet et correctio
    ✅ Exercice 3 : Recherche et pagination (100/100) ✓ ⭐⭐
    ✅ Exercice 4 : Documentation Swagger/OpenAPI (95/100) ✓ ⭐⭐
    ✅ Mini-projet : API e-commerce complète (95/100) ✓ 🏆 ⭐⭐
-🔄 Module 4 : Spring Security (33%)
+🔄 Module 4 : Spring Security (90%)
    ✅ Cours théorique : JWT, BCrypt, Roles (100%) ✓
    ✅ Exercice 1 : JWT Authentication (118/120 - 98.3%) ✓ ⭐⭐
-   📝 Exercice 2 : Roles et permissions (0%)
-   📝 Exercice 3 : Refresh tokens et sécurité avancée (0%)
+   ✅ Exercice 2 : Roles et permissions (validé techniquement avec tests RBAC) ✓ ⭐
+   ✅ Exercice 3 : Refresh tokens et sécurité avancée (validé techniquement avec tests) ✓ ⭐
    📝 Mini-projet : Blog platform multi-roles (0%)
 ⏳ Module 5 : SQL Avancé (0%)
 ⏳ Module 6 : Tests (0%)
@@ -659,7 +669,7 @@ Chaque module comprend : théorie, exercices pratiques, mini-projet et correctio
 - ✅ Valider les données et gérer les exceptions professionnellement
 - ✅ Implémenter pagination, recherche et statistiques
 - ✅ Développer une API e-commerce complète avec relations complexes
-- 🔄 Sécuriser les APIs avec Spring Security et JWT (33%)
+- 🔄 Sécuriser les APIs avec Spring Security et JWT (90%)
 
 ### Moyen terme (3 mois)
 - 🔄 Développer des APIs sécurisées et testées (en cours)
@@ -778,20 +788,19 @@ Chaque module comprend : théorie, exercices pratiques, mini-projet et correctio
 
 ## 🚀 Prochaine étape
 
-**Action immédiate : Module 4 - Exercice 2 : Roles et Permissions 🔐**
+**Action immédiate : Démarrer le mini-projet Spring Security 🔐**
 
 1. ✅ Exercice 1 JWT Authentication complété (118/120) ⭐⭐
-2. 📖 **Ouvre `spring-security/EXERCICE2.md`**
-3. 🏗️ **Objectif** : Ajouter la gestion des rôles (USER, MODERATOR, ADMIN)
+2. ✅ Exercice 2 Roles & Permissions validé techniquement (tests RBAC 403/200)
+3. 🏗️ **Objectif** : lancer le mini-projet multi-rôles
 4. 🔧 **Tâches principales** :
-   - Ajouter plusieurs rôles à l'entité User
-   - Créer un ProductController avec endpoints protégés
-   - Utiliser @PreAuthorize pour sécuriser par rôle
-   - Implémenter hasRole() et hasAnyRole()
-   - Tester avec différents utilisateurs/rôles
-5. 🧪 Teste avec Postman ou curl
+   - Créer les rôles USER/MODERATOR/ADMIN sur le mini-projet
+   - Protéger les endpoints CRUD avec règles RBAC
+   - Ajouter refresh token + logout + change-password
+   - Ajouter tests MockMvc sur les scénarios critiques
+5. 🧪 Exécuter tests et valider les scénarios de sécurité
 
-**Durée estimée** : 2-3 heures
+**Durée estimée** : 2-4 heures
 
 **Concepts à maîtriser :**
 - Annotation @PreAuthorize

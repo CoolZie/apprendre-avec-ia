@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -41,6 +42,10 @@ public class User {
     
     @Column(nullable = false)
     private String password;
+
+     @Column(nullable = false)
+    @Builder.Default
+    private boolean enabled = false;  // Pas activé par défaut
     
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
@@ -48,6 +53,13 @@ public class User {
     @Builder.Default
     private Set<String> roles = new HashSet<>();
     
+   private String verificationToken;
+    
+    private LocalDateTime verificationTokenExpiry;
+    
     @CreationTimestamp
     private LocalDateTime createdAt;
+    
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 }

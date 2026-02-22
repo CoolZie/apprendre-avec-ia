@@ -844,6 +844,41 @@ public class LoginAttemptService {
 
 ## 📝 Résumé
 
+## 🔎 Comment Spring reconnaît les rôles et permissions
+
+Spring ne lit pas directement les annotations JPA (`@ManyToMany`, `@ElementCollection`) pour autoriser un endpoint.
+Ce qui compte pour l'autorisation, ce sont les `GrantedAuthority` présentes dans le `SecurityContext`.
+
+### Flux réel en 5 étapes
+
+1. **Chargement utilisateur en base**
+    - `UserDetailsService.loadUserByUsername()` charge l'utilisateur + ses rôles/permissions.
+
+2. **Conversion en authorities**
+    - Chaque rôle/permission est converti en `SimpleGrantedAuthority`.
+    - Exemples d'autorities: `ROLE_ADMIN`, `ROLE_USER`, `READ_PRODUCT`, `DELETE_PRODUCT`.
+
+3. **Création de l'Authentication**
+    - Spring crée un `UsernamePasswordAuthenticationToken` avec ces authorities.
+
+4. **Injection dans le contexte sécurité**
+    - Le token d'authentification est stocké dans `SecurityContextHolder`.
+
+5. **Évaluation des règles**
+    - `@PreAuthorize` lit les authorities du contexte.
+    - `hasRole('ADMIN')` vérifie en réalité l'authority `ROLE_ADMIN`.
+    - `hasAuthority('DELETE_PRODUCT')` vérifie exactement cette permission.
+
+### Important
+
+- **Role** = regroupement logique de permissions.
+- **Authority** = droit technique effectivement évalué par Spring.
+- Sans conversion explicite en `GrantedAuthority`, Spring ne peut pas appliquer correctement `hasRole()` / `hasAuthority()`.
+
+### Schéma mental rapide
+
+`DB (User->Roles->Permissions)` → `UserDetailsService` → `GrantedAuthority` → `SecurityContext` → `@PreAuthorize`
+
 ### Points clés à retenir
 
 ✅ **Spring Security** = Filtres + Authentification + Autorisation  

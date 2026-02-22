@@ -2,12 +2,14 @@
 
 ## 🎯 Objectifs
 
-Implémenter un système de gestion des rôles et permissions :
-- ✅ Gérer plusieurs rôles par utilisateur (USER, ADMIN, MODERATOR)
-- ✅ Protéger les endpoints avec `@PreAuthorize`
-- ✅ Créer des règles d'autorisation complexes
+Implémenter un système de gestion des rôles et permissions sur les contrôleurs existants :
+- ✅ Gérer plusieurs rôles par utilisateur (USER, MODERATOR, ADMIN)
+- ✅ Protéger les endpoints existants avec `@PreAuthorize`
+- ✅ Créer un UserController pour la gestion des utilisateurs
 - ✅ Implémenter un système RBAC (Role-Based Access Control)
 - ✅ Gérer les permissions granulaires
+
+> **Note :** Cet exercice se concentre sur Spring Security. Les entités Product, Customer, Order et leurs contrôleurs existent déjà dans le package `com.exercice1.demo`.
 
 ---
 
@@ -20,51 +22,88 @@ Implémenter un système de gestion des rôles et permissions :
 - **ROLE_MODERATOR** : Modérateur (peut gérer le contenu)
 - **ROLE_ADMIN** : Administrateur (tous les droits)
 
-#### Permissions par rôle
+#### Permissions par rôle sur les endpoints existants
 
 | Rôle | Permissions |
 |------|------------|
-| **USER** | Lire produits, Créer commandes, Voir son profil |
-| **MODERATOR** | USER + Créer/Modifier produits, Voir tous les utilisateurs |
-| **ADMIN** | MODERATOR + Supprimer produits, Gérer utilisateurs, Changer rôles |
+| **USER** | Lire produits/commandes, Créer ses commandes, Voir son profil |
+| **MODERATOR** | USER + Créer/Modifier produits, Voir tous les clients |
+| **ADMIN** | MODERATOR + Supprimer produits/commandes, Gérer utilisateurs, Changer rôles |
 
-### Endpoints à créer
+### Endpoints à sécuriser (déjà existants)
 
+#### ProductController (`/api/products`)
 | Méthode | Route | Rôle requis | Description |
 |---------|-------|-------------|-------------|
-| GET | `/api/products` | USER | Liste des produits |
-| POST | `/api/products` | MODERATOR | Créer un produit |
-| PUT | `/api/products/{id}` | MODERATOR | Modifier un produit |
-| DELETE | `/api/products/{id}` | ADMIN | Supprimer un produit |
-| GET | `/api/users` | MODERATOR | Liste des utilisateurs |
-| GET | `/api/users/{id}` | USER (soi-même) ou ADMIN | Profil utilisateur |
-| PATCH | `/api/users/{id}/role` | ADMIN | Changer le rôle d'un utilisateur |
-| DELETE | `/api/users/{id}` | ADMIN | Supprimer un utilisateur |
+| GET | `/api/products` | **Tous** (anonymous) | Liste des produits |
+| GET | `/api/products/{id}` | **Tous** (anonymous) | Détail produit |
+| POST | `/api/products` | **MODERATOR** | Créer un produit |
+| PUT | `/api/products/{id}` | **MODERATOR** | Modifier un produit |
+| DELETE | `/api/products/{id}` | **ADMIN** | Supprimer un produit |
+| PATCH | `/api/products/{id}/stock` | **MODERATOR** | Mettre à jour le stock |
+
+#### CustomerController (`/api/customers`)
+| Méthode | Route | Rôle requis | Description |
+|---------|-------|-------------|-------------|
+| GET | `/api/customers` | **MODERATOR** | Liste des clients |
+| GET | `/api/customers/{id}` | **USER** (soi-même) ou **ADMIN** | Profil client |
+| POST | `/api/customers` | **PUBLIC** | Créer client (inscription) |
+| PUT | `/api/customers/{id}` | **USER** (soi-même) ou **ADMIN** | Modifier client |
+| DELETE | `/api/customers/{id}` | **ADMIN** | Supprimer client |
+
+#### OrderController (`/api/orders`)
+| Méthode | Route | Rôle requis | Description |
+|---------|-------|-------------|-------------|
+| GET | `/api/orders` | **MODERATOR** | Liste toutes les commandes |
+| GET | `/api/orders/{id}` | **USER** (sa commande) ou **MODERATOR** | Détail commande |
+| POST | `/api/orders` | **USER** | Créer une commande |
+| PATCH | `/api/orders/{id}/status` | **MODERATOR** | Changer le statut |
+| DELETE | `/api/orders/{id}` | **ADMIN** | Annuler/Supprimer |
+
+### Nouveaux endpoints à créer
+
+#### UserController (`/api/users`)
+| Méthode | Route | Rôle requis | Description |
+|---------|-------|-------------|-------------|
+| GET | `/api/users` | **ADMIN** | Liste des utilisateurs |
+| GET | `/api/users/{id}` | **USER** (soi-même) ou **ADMIN** | Profil utilisateur |
+| PATCH | `/api/users/{id}/roles` | **ADMIN** | Changer les rôles |
+| DELETE | `/api/users/{id}` | **ADMIN** | Supprimer utilisateur |
 
 ---
 
 ## 📐 Architecture
 
 ```
-src/main/java/com/formation/security/
-├── model/
-│   ├── User.java                    # Modifié : Set<String> roles
-│   └── Product.java                 # Nouvelle entité
-├── repository/
-│   ├── UserRepository.java
-│   └── ProductRepository.java       # Nouveau
-├── service/
-│   ├── UserService.java             # Gestion utilisateurs
-│   └── ProductService.java          # Nouveau
-├── controller/
-│   ├── UserController.java          # Nouveau
-│   └── ProductController.java       # Nouveau
-├── dto/
-│   ├── ProductRequest.java          # Nouveau
-│   ├── ProductResponse.java         # Nouveau
-│   └── RoleUpdateRequest.java       # Nouveau
-└── security/
-    └── SecurityUtils.java           # Helper pour vérifications custom
+src/main/java/com/exercice1/
+├── demo/                           # ✅ Déjà existant (ne pas toucher)
+│   ├── model/                      # Product, Customer, Order, OrderItem
+│   ├── repository/                 # ProductRepository, CustomerRepository...
+│   ├── service/                    # ProductService, CustomerService...
+│   └── controller/                 # ✅ À MODIFIER : Ajouter @PreAuthorize
+│       ├── ProductController.java
+│       ├── CustomerController.java
+│       └── OrderController.java
+│
+└── security/                       # 🔒 Package Security
+    ├── model/
+    │   └── User.java              # ✅ À MODIFIER : Set<String> roles
+    ├── repository/
+    │   └── UserRepository.java
+    ├── service/
+    │   ├── UserService.java       # ✅ À CRÉER : Gestion utilisateurs
+    │   └── UserDetailsServiceImpl.java
+    ├── controller/
+    │   ├── AuthController.java    # ✅ Déjà existant
+    │   └── UserController.java    # ✅ À CRÉER : Gestion roles
+    ├── dto/
+    │   ├── UserResponse.java
+    │   └── RoleUpdateRequest.java # ✅ À CRÉER
+    ├── config/
+    │   ├── SecurityConfig.java    # ✅ À MODIFIER : .permitAll() endpoints publics
+    │   └── ApplicationConfig.java
+    └── security/
+        └── JwtAuthenticationFilter.java
 ```
 
 ---
@@ -73,8 +112,9 @@ src/main/java/com/formation/security/
 
 ### Étape 1 : Modifier l'entité User pour multi-rôles
 
-**Fichier** : `model/User.java`
+**Fichier** : `security/model/User.java`
 
+**Modification :**
 ```java
 @Entity
 @Table(name = "users")
@@ -97,7 +137,7 @@ public class User {
     @Column(nullable = false)
     private String password;
     
-    // ✅ MODIFIER : Un Set pour supporter plusieurs rôles
+    // ✅ DÉJÀ FAIT : Un Set pour supporter plusieurs rôles
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "role")
@@ -106,148 +146,742 @@ public class User {
     
     @CreationTimestamp
     private LocalDateTime createdAt;
+}
+```
+
+> ✅ **Note** : Cette modification a déjà été faite dans l'exercice 1. Si ce n'est pas le cas, applique-la.
+
+---
+
+### Étape 2 : Activer les annotations de sécurité
+
+**Fichier** : `security/config/SecurityConfig.java`
+
+**Ajouter l'annotation** :
+```java
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)  // ← AJOUTER CETTE LIGNE
+@RequiredArgsConstructor
+public class SecurityConfig {
+    // ... reste du code inchangé
+}
+```
+
+**💡 Explication** : `@EnableMethodSecurity(prePostEnabled = true)` active les annotations `@PreAuthorize` et `@PostAuthorize`.
+
+---
+
+### Étape 3 : Configurer les endpoints publics
+
+**Fichier** : `security/config/SecurityConfig.java`
+
+**Modifier la méthode `securityFilterChain`** :
+```java
+@Bean
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+        .csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(auth -> auth
+            // Endpoints publics (pas d'authentification requise)
+            .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()  // ← Lecture produits publique
+            .requestMatchers(HttpMethod.POST, "/api/customers").permitAll()   // ← Inscription client
+            .requestMatchers("/h2-console/**").permitAll()
+            .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+            
+            // Tous les autres endpoints nécessitent une authentification
+            .anyRequest().authenticated()
+        )
+        .sessionManagement(session -> 
+            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        )
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
     
-    @PrePersist
-    public void initRoles() {
-        if (roles == null || roles.isEmpty()) {
-            roles = new HashSet<>();
-            roles.add("ROLE_USER");  // Rôle par défaut
+    // Pour H2 Console
+    http.headers(headers -> headers.frameOptions(frame -> frame.disable()));
+    
+    return http.build();
+}
+```
+
+**💡 Explications** :
+- `.permitAll()` : Accessible sans authentification
+- `.authenticated()` : Authentification requise mais pas de rôle spécifique
+- Les permissions par rôle seront gérées avec `@PreAuthorize` sur les méthodes
+
+---
+
+### Étape 4 : Sécuriser ProductController
+
+**Fichier** : `demo/controller/ProductController.java`
+
+**Ajouter les annotations de sécurité** :
+
+```java
+import org.springframework.security.access.prepost.PreAuthorize;
+
+@RestController
+@RequestMapping("/api/products")
+@RequiredArgsConstructor
+public class ProductController {
+    
+    private final ProductService productService;
+    
+    // ✅ GET : Public (pas d'annotation)
+    @GetMapping
+    public ResponseEntity<PagedResponse<ProductResponse>> getAllProducts(...) {
+        // ... code existant
+    }
+    
+    @GetMapping("/{id}")
+  public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
+        // ... code existant
+    }
+    
+    // ✅ POST : MODERATOR ou ADMIN
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+    @PostMapping
+    public ResponseEntity<ProductResponse> createProduct(@Valid @RequestBody ProductRequest request) {
+        // ... code existant
+    }
+    
+    // ✅ PUT : MODERATOR ou ADMIN
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductResponse> updateProduct(
+        @PathVariable Long id,
+        @Valid @RequestBody ProductRequest request) {
+        // ... code existant
+    }
+    
+    // ✅ PATCH : MODERATOR ou ADMIN
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+    @PatchMapping("/{id}/stock")
+    public ResponseEntity<ProductResponse> updateStock(
+        @PathVariable Long id,
+        @RequestBody UpdateStockRequest request) {
+        // ... code existant
+    }
+    
+    // ✅ DELETE : ADMIN seulement
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        // ... code existant
+    }
+}
+```
+
+**💡 Explications** :
+- `hasRole('ADMIN')` : Vérifie si l'utilisateur a le rôle ROLE_ADMIN
+- `hasAnyRole('MODERATOR', 'ADMIN')` : Au moins un des deux rôles
+- Spring Security ajoute automatiquement le préfixe `ROLE_` si absent
+
+---
+
+### Étape 5 : Sécuriser CustomerController
+
+**Fichier** : `demo/controller/CustomerController.java`
+
+```java
+@RestController
+@RequestMapping("/api/customers")
+@RequiredArgsConstructor
+public class CustomerController {
+    
+    private final CustomerService customerService;
+    
+    // ✅ GET all : MODERATOR ou ADMIN
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+    @GetMapping
+    public ResponseEntity<PagedResponse<CustomerResponse>> getAllCustomers(...) {
+        // ... code existant
+    }
+    
+    // ✅ GET by ID : Vérification custom (voir étape 7)
+    @PreAuthorize("hasRole('ADMIN') or @securityUtils.isOwner(#id, authentication)")
+    @GetMapping("/{id}")
+    public ResponseEntity<CustomerResponse> getCustomerById(@PathVariable Long id) {
+        // ... code existant
+    }
+    
+    // ✅ POST : Public (inscription)
+    @PostMapping
+    public ResponseEntity<CustomerResponse> createCustomer(@Valid @RequestBody CustomerRequest request) {
+        // ... code existant
+    }
+    
+    // ✅ PUT : Propriétaire ou ADMIN
+    @PreAuthorize("hasRole('ADMIN') or @securityUtils.isOwner(#id, authentication)")
+    @PutMapping("/{id}")
+    public ResponseEntity<CustomerResponse> updateCustomer(
+        @PathVariable Long id,
+        @Valid @RequestBody CustomerRequest request) {
+        // ... code existant
+    }
+    
+    // ✅ DELETE : ADMIN seulement
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {
+        // ... code existant
+    }
+}
+```
+
+---
+
+### Étape 6 : Sécuriser OrderController
+
+**Fichier** : `demo/controller/OrderController.java`
+
+```java
+@RestController
+@RequestMapping("/api/orders")
+@RequiredArgsConstructor
+public class OrderController {
+    
+    private final OrderService orderService;
+    
+    // ✅ GET all : MODERATOR ou ADMIN
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+    @GetMapping
+    public ResponseEntity<PagedResponse<OrderResponse>> getAllOrders(...) {
+        // ... code existant
+    }
+    
+    // ✅ GET by ID : Propriétaire ou MODERATOR
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN') or @securityUtils.isOrderOwner(#id, authentication)")
+    @GetMapping("/{id}")
+    public ResponseEntity<OrderResponse> getOrderById(@PathVariable Long id) {
+        // ... code existant
+    }
+    
+    // ✅ POST : USER authentifié
+    @PreAuthorize("hasRole('USER')")
+    @PostMapping
+    public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody OrderRequest request) {
+        // ... code existant
+    }
+    
+    // ✅ PATCH status : MODERATOR ou ADMIN
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<OrderResponse> updateOrderStatus(
+        @PathVariable Long id,
+        @RequestBody OrderStatusRequest request) {
+        // ... code existant
+    }
+    
+    // ✅ DELETE : ADMIN seulement
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> cancelOrder(@PathVariable Long id) {
+        // ... code existant
+    }
+}
+```
+
+---
+
+### Étape 7 : Créer SecurityUtils pour vérifications custom
+
+**Fichier** : `security/security/SecurityUtils.java` (NOUVEAU)
+
+```java
+package com.exercice1.security.security;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Component;
+
+import com.exercice1.demo.model.Customer;
+import com.exercice1.demo.model.Order;
+import com.exercice1.demo.repository.CustomerRepository;
+import com.exercice1.demo.repository.OrderRepository;
+import com.exercice1.security.model.User;
+import com.exercice1.security.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Component("securityUtils")
+@RequiredArgsConstructor
+public class SecurityUtils {
+    
+    private final UserRepository userRepository;
+    private final CustomerRepository customerRepository;
+    private final OrderRepository orderRepository;
+    
+    /**
+     * Vérifie si l'utilisateur connecté est le propriétaire du Customer
+     */
+    public boolean isOwner(Long customerId, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
         }
+        
+        String username = authentication.getName();
+        User user = userRepository.findByUsername(username).orElse(null);
+        if (user == null) {
+            return false;
+        }
+        
+        Customer customer = customerRepository.findById(customerId).orElse(null);
+        if (customer == null) {
+            return false;
+        }
+        
+        // Vérifier si le customer est associé à cet utilisateur
+        // (suppose que Customer a un email correspondant à User.email)
+        return customer.getEmail().equals(user.getEmail());
+    }
+    
+    /**
+     * Vérifie si l'utilisateur connecté est le propriétaire de la commande
+     */
+    public boolean isOrderOwner(Long orderId, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+        
+        String username = authentication.getName();
+        User user = userRepository.findByUsername(username).orElse(null);
+        if (user == null) {
+            return false;
+        }
+        
+        Order order = orderRepository.findById(orderId).orElse(null);
+        if (order == null) {
+            return false;
+        }
+        
+        // Vérifier si la commande appartient au customer de cet utilisateur
+        return order.getCustomer().getEmail().equals(user.getEmail());
     }
 }
 ```
 
-### Étape 2 : Créer l'entité Product
+**💡 Explication** :
+- `@Component("securityUtils")` : Bean accessible dans `@PreAuthorize` via `@securityUtils`
+- Permet des vérifications complexes (propriété d'une ressource)
+- Exemple : Un USER peut voir/modifier ses propres données mais pas celles des autres
 
-**Fichier** : `model/Product.java`
+---
 
-```java
-@Entity
-@Table(name = "products")
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class Product {
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    
-    @Column(nullable = false)
-    private String name;
-    
-    @Column(length = 500)
-    private String description;
-    
-    @Column(nullable = false)
-    private BigDecimal price;
-    
-    @Column(nullable = false)
-    private Integer stock;
-    
-    @ManyToOne
-    @JoinColumn(name = "created_by")
-    private User createdBy;
-    
-    @CreationTimestamp
-    private LocalDateTime createdAt;
-    
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
-}
-```
+### Étape 8 : Créer le DTO RoleUpdateRequest
 
-### Étape 3 : Créer ProductRepository
-
-**Fichier** : `repository/ProductRepository.java`
+**Fichier** : `security/dto/RoleUpdateRequest.java` (NOUVEAU)
 
 ```java
-public interface ProductRepository extends JpaRepository<Product, Long> {
-    List<Product> findByCreatedBy(User user);
-}
-```
+package com.exercice1.security.dto;
 
-### Étape 4 : Créer les DTOs
+import java.util.Set;
 
-**ProductRequest.java** :
-```java
-@Data
-public class ProductRequest {
-    @NotBlank(message = "Name is required")
-    @Size(min = 3, max = 100)
-    private String name;
-    
-    @Size(max = 500)
-    private String description;
-    
-    @NotNull(message = "Price is required")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
-    private BigDecimal price;
-    
-    @NotNull(message = "Stock is required")
-    @Min(value = 0, message = "Stock cannot be negative")
-    private Integer stock;
-}
-```
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Pattern;
+import lombok.Data;
 
-**ProductResponse.java** :
-```java
-@Data
-@AllArgsConstructor
-public class ProductResponse {
-    private Long id;
-    private String name;
-    private String description;
-    private BigDecimal price;
-    private Integer stock;
-    private String createdBy;
-    private LocalDateTime createdAt;
-    
-    public static ProductResponse from(Product product) {
-        return new ProductResponse(
-            product.getId(),
-            product.getName(),
-            product.getDescription(),
-            product.getPrice(),
-            product.getStock(),
-            product.getCreatedBy().getUsername(),
-            product.getCreatedAt()
-        );
-    }
-}
-```
-
-**RoleUpdateRequest.java** :
-```java
 @Data
 public class RoleUpdateRequest {
+    
     @NotEmpty(message = "Roles cannot be empty")
-    private Set<
-@Pattern(regexp = "^ROLE_(USER|MODERATOR|ADMIN)$", message = "Invalid role")
-        String> roles;
+    private Set<@Pattern(
+        regexp = "^ROLE_(USER|MODERATOR|ADMIN)$", 
+        message = "Invalid role. Must be ROLE_USER, ROLE_MODERATOR, or ROLE_ADMIN"
+    ) String> roles;
 }
 ```
 
-### Étape 5 : Créer ProductService
+---
 
-**Fichier** : `service/ProductService.java`
+### Étape 9 : Créer UserService
+
+**Fichier** : `security/service/UserService.java` (NOUVEAU)
 
 ```java
+package com.exercice1.security.service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.exercice1.security.dto.RoleUpdateRequest;
+import com.exercice1.security.dto.UserResponse;
+import com.exercice1.security.exception.InvalidDataException;
+import com.exercice1.security.model.User;
+import com.exercice1.security.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
+
 @Service
 @RequiredArgsConstructor
-public class ProductService {
+public class UserService {
     
-    private final ProductRepository productRepository;
     private final UserRepository userRepository;
     
-    public List<ProductResponse> getAllProducts() {
-        return productRepository.findAll().stream()
-            .map(ProductResponse::from)
+    public List<UserResponse> getAllUsers() {
+        return userRepository.findAll().stream()
+            .map(user -> new UserResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getCreatedAt()
+            ))
             .collect(Collectors.toList());
     }
     
-    public ProductResponse getProductById(Long id) {
+    public UserResponse getUserById(Long id) {
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new InvalidDataException("User not found"));
+        
+        return new UserResponse(
+            user.getId(),
+            user.getUsername(),
+            user.getEmail(),
+            user.getCreatedAt()
+        );
+    }
+    
+    @Transactional
+    public UserResponse updateUserRoles(Long id, RoleUpdateRequest request) {
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new InvalidDataException("User not found"));
+        
+        user.setRoles(request.getRoles());
+        User updated = userRepository.save(user);
+        
+        return new UserResponse(
+            updated.getId(),
+            updated.getUsername(),
+            updated.getEmail(),
+            updated.getCreatedAt()
+        );
+    }
+    
+    @Transactional
+    public void deleteUser(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new InvalidDataException("User not found");
+        }
+        userRepository.deleteById(id);
+    }
+}
+```
+
+> **Note** : Créer `InvalidDataException` si elle n'existe pas :
+```java
+package com.exercice1.security.exception;
+
+public class InvalidDataException extends RuntimeException {
+    public InvalidDataException(String message) {
+        super(message);
+    }
+}
+```
+
+---
+
+### Étape 10 : Créer UserController
+
+**Fichier** : `security/controller/UserController.java` (NOUVEAU)
+
+```java
+package com.exercice1.security.controller;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.exercice1.security.dto.RoleUpdateRequest;
+import com.exercice1.security.dto.UserResponse;
+import com.exercice1.security.service.UserService;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/users")
+@RequiredArgsConstructor
+public class UserController {
+    
+    private final UserService userService;
+    
+    /**
+     * Liste tous les utilisateurs (ADMIN seulement)
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
+    }
+    
+    /**
+     * Voir un utilisateur spécifique
+     * - ADMIN : peut voir n'importe qui
+     * - USER : peut voir seulement son propre profil
+     */
+    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
+    @GetMapping("/{id}")
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.getUserById(id));
+    }
+    
+    /**
+     * Changer les rôles d'un utilisateur (ADMIN seulement)
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{id}/roles")
+    public ResponseEntity<UserResponse> updateUserRoles(
+        @PathVariable Long id,
+        @Valid @RequestBody RoleUpdateRequest request) {
+        return ResponseEntity.ok(userService.updateUserRoles(id, request));
+    }
+    
+    /**
+     * Supprimer un utilisateur (ADMIN seulement)
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
+    }
+}
+```
+
+---
+
+### Étape 11 : Modifier AuthController pour supports multi-rôles au register
+
+**Fichier** : `security/controller/AuthController.java`
+
+**Modifier la méthode `register()`** pour permettre de choisir les rôles :
+
+```java
+@PostMapping("/register")
+public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+    if (userRepository.existsByUsername(request.getUsername())) {
+        throw new DuplicateResourceException("Username already exists");
+    }
+    
+    // Créer le nouvel utilisateur avec rôle USER par défaut
+    User user = User.builder()
+        .username(request.getUsername())
+        .email(request.getEmail())
+        .password(passwordEncoder.encode(request.getPassword()))
+        .roles(Set.of("ROLE_USER"))  // Rôle par défaut
+        .build();
+    
+    userRepository.save(user);
+    
+    String token = jwtService.generateToken(toUserDetails(user));
+    
+    return ResponseEntity.ok(new AuthResponse(token, user.getUsername(), user.getEmail()));
+}
+```
+
+> Pour changer les rôles, utiliser l'endpoint PATCH `/api/users/{id}/roles` (ADMIN seulement)
+
+---
+
+## ✅ Tests et Validation
+
+### Test 1 : Créer des utilisateurs avec différents rôles
+
+**1. Créer un USER normal** :
+```bash
+POST http://localhost:8080/api/auth/register
+{
+  "username": "alice",
+  "email": "alice@example.com",
+  "password": "password123"
+}
+# → Rôle par défaut : ROLE_USER
+```
+
+**2. Créer un USER et le promouvoir MODERATOR** :
+```bash
+# a) S'enregistrer
+POST http://localhost:8080/api/auth/register
+{
+  "username": "bob",
+  "email": "bob@example.com",
+  "password": "password123"
+}
+
+# b) Se connecter en tant qu'ADMIN (créé manuellement en DB)
+POST http://localhost:8080/api/auth/login
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+# c) Changer le rôle de bob (avec token ADMIN)
+PATCH http://localhost:8080/api/users/2/roles
+Authorization: Bearer <admin_token>
+{
+  "roles": ["ROLE_USER", "ROLE_MODERATOR"]
+}
+```
+
+---
+
+### Test 2 : Tester les permissions ProductController
+
+**a) Lire les produits (PUBLIC - pas de token)** :
+```bash
+GET http://localhost:8080/api/products
+# ✅ Doit fonctionner sans authentification
+```
+
+**b) Créer un produit (MODERATOR requis)** :
+```bash
+# Avec token USER
+POST http://localhost:8080/api/products
+Authorization: Bearer <user_token>
+{
+  "name": "Laptop",
+  "price": 999.99,
+  "stock": 10
+}
+# ❌ 403 Forbidden (USER n'a pas le droit)
+
+# Avec token MODERATOR
+POST http://localhost:8080/api/products
+Authorization: Bearer <moderator_token>
+{
+  "name": "Laptop",
+  "price": 999.99,
+  "stock": 10
+}
+# ✅ 201 Created
+```
+
+**c) Supprimer un produit (ADMIN requis)** :
+```bash
+# Avec token MODERATOR
+DELETE http://localhost:8080/api/products/1
+Authorization: Bearer <moderator_token>
+# ❌ 403 Forbidden (MODERATOR ne peut pas supprimer)
+
+# Avec token ADMIN
+DELETE http://localhost:8080/api/products/1
+Authorization: Bearer <admin_token>
+# ✅ 204 No Content
+```
+
+---
+
+### Test 3 : Tester les permissions UserController
+
+**a) Liste des utilisateurs (ADMIN seulement)** :
+```bash
+GET http://localhost:8080/api/users
+Authorization: Bearer <user_token>
+# ❌ 403 Forbidden
+
+GET http://localhost:8080/api/users
+Authorization: Bearer <admin_token>
+# ✅ 200 OK
+```
+
+**b) Voir son propre profil (USER autorisé)** :
+```bash
+GET http://localhost:8080/api/users/1
+Authorization: Bearer <user_token de l'utilisateur id=1>
+# ✅ 200 OK (soi-même)
+
+GET http://localhost:8080/api/users/2
+Authorization: Bearer <user_token de l'utilisateur id=1>
+# ❌ 403 Forbidden (pas son profil et pas ADMIN)
+```
+
+---
+
+### Test 4 : Vérifier SecurityUtils (propriété)
+
+**a) CustomerController - Voir son client** :
+```bash
+# User alice (id=1) associé au Customer (id=1, email=alice@example.com)
+GET http://localhost:8080/api/customers/1
+Authorization: Bearer <alice_token>
+# ✅ 200 OK (son propre customer)
+
+GET http://localhost:8080/api/customers/2
+Authorization: Bearer <alice_token>
+# ❌ 403 Forbidden (pas son customer)
+```
+
+---
+
+## 📝 Récapitulatif
+
+### Ce que tu as appris
+
+1. **@EnableMethodSecurity** : Active les annotations de sécurité sur les méthodes
+2. **@PreAuthorize** : Vérifie les permissions AVANT l'exécution
+3. **hasRole()** : Vérifie un rôle spécifique
+4. **hasAnyRole()** : Vérifie au moins un des rôles listés
+5. **SpEL expressions** : `@securityUtils.isOwner()` pour vérifications custom
+6. **SecurityUtils** : Bean pour logique de sécurité complexe
+7. **Multi-rôles** : Un utilisateur peut avoir plusieurs rôles simultanément
+
+### Différences clés
+
+| Annotation | Description | Exemple |
+|------------|-------------|---------|
+| `hasRole('ADMIN')` | Un seul rôle requis | Suppression |
+| `hasAnyRole('MODERATOR', 'ADMIN')` | Au moins un des rôles | Modification |
+| `hasAuthority('ROLE_ADMIN')` | Autorité exacte (avec préfixe) | Rarement utilisé |
+| `@securityUtils.method()` | Logique custom | Propriété ressource |
+
+---
+
+## 🎯 Critères de Réussite
+
+- [ ] Multi-rôles configurés sur User
+- [ ] @EnableMethodSecurity activé
+- [ ] Endpoints publics configurés (GET /products, POST /customers)
+- [ ] ProductController sécurisé (MODERATOR pour création, ADMIN](#)
+ pour suppression)
+- [ ] CustomerController sécurisé (propriétaire ou ADMIN)
+- [ ] OrderController sécurisé (propriétaire ou MODERATOR)
+- [ ] SecurityUtils créé pour vérifications custom
+- [ ] UserController créé (gestion utilisateurs/rôles)
+- [ ] Tests réussis pour les 3 rôles (USER, MODERATOR, ADMIN)
+- [ ] 403 Forbidden retourné si permissions insuffisantes
+
+---
+
+## 💡 Conseils
+
+1. **Commence par activer @EnableMethodSecurity** avant d'ajouter les @PreAuthorize
+2. **Teste avec Postman** en créant une collection avec les 3 types de tokens
+3. **Vérifie les logs** : Spring Security log les refus d'accès
+4. **Utilise H2 Console** pour vérifier la table `user_roles`
+5. **Crée un utilisateur ADMIN manuellement** en DB pour les premiers tests :
+   ```sql
+   INSERT INTO users (username, email, password, created_at) 
+   VALUES ('admin', 'admin@example.com', '$2a$12$...', NOW());
+   
+   INSERT INTO user_roles (user_id, role) 
+   VALUES (1, 'ROLE_ADMIN');
+   ```
+
+---
+
+**Bon courage ! 🚀🔒**
+
         Product product = productRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
         return ProductResponse.from(product);

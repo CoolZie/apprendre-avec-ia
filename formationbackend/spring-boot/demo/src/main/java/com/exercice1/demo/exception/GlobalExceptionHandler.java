@@ -6,11 +6,14 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+
+import com.exercice1.security.exception.AccountBlockedException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -97,6 +100,30 @@ public class GlobalExceptionHandler {
                                 .build();
 
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+
+        @ExceptionHandler(AccessDeniedException.class)
+        public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+                ErrorResponse errorResponse = ErrorResponse.builder()
+                                .timestamp(LocalDateTime.now())
+                                .status(HttpStatus.FORBIDDEN.value())
+                                .error("Forbidden")
+                                .message("Accès refusé")
+                                .build();
+
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+        }
+
+        @ExceptionHandler(AccountBlockedException.class)
+        public ResponseEntity<ErrorResponse> handleAccountBlocked(AccountBlockedException ex) {
+                ErrorResponse errorResponse = ErrorResponse.builder()
+                                .timestamp(LocalDateTime.now())
+                                .status(HttpStatus.TOO_MANY_REQUESTS.value())
+                                .error("Too Many Requests")
+                                .message(ex.getMessage())
+                                .build();
+
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(errorResponse);
         }
 
         @ExceptionHandler(InsufficientStockException.class)

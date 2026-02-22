@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -228,6 +229,7 @@ public class ProductController {
             @ApiResponse(responseCode = "409", description = "Un produit avec ce nom existe déjà")
     })
     @PostMapping
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
     public ResponseEntity<ProductResponse> createProduct(@RequestBody @Valid ProductRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(request));
     }
@@ -243,6 +245,7 @@ public class ProductController {
             @ApiResponse(responseCode = "404", description = "Produit non trouvé")
     })
     @PutMapping("/{id}")
+     @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
     public ResponseEntity<ProductResponse> updateProduct(@RequestBody @Valid ProductRequest request,
             @PathVariable Long id) {
         return ResponseEntity.ok(productService.updateProduct(id, request));
@@ -259,6 +262,7 @@ public class ProductController {
             @ApiResponse(responseCode = "404", description = "Produit non trouvé")
     })
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
@@ -276,6 +280,7 @@ public class ProductController {
             @ApiResponse(responseCode = "404", description = "Produit non trouvé")
     })
     @PatchMapping("/{id}/stock")
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
     public ResponseEntity<ProductResponse> patchStockProduct(@PathVariable Long id, @RequestParam Integer quantity) {
         ProductResponse product = productService.updateStock(id, quantity);
         return ResponseEntity.ok().body(product);

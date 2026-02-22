@@ -1,5 +1,6 @@
 package com.exercice1.demo.controller;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -26,16 +27,19 @@ public class OrderController {
     final OrderService orderService;
 
     @PostMapping
+    @PreAuthorize("hasRole('USER')")
     public OrderResponse createOrder(@RequestBody OrderRequest request) {
         return orderService.createOrder(request);
     }
 
     @GetMapping("/{id}")
+     @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN') or @securityUtils.isOrderOwner(#id, authentication)")
     public OrderResponse getOrder(@PathVariable Long id) {
         return orderService.getOrderById(id);
     }
 
-    @GetMapping()
+    @GetMapping
+     @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
     public PagedResponse<OrderResponse> getAllorder(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -45,11 +49,13 @@ public class OrderController {
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
     public OrderResponse pathOrder(@PathVariable Long id, @RequestParam String status) {
         return orderService.updateOrderStatus(id, OrderStatus.valueOf(status));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public String deleteOrder(@PathVariable Long id) {
         orderService.cancelOrder(id);
         return "Commande annulee";

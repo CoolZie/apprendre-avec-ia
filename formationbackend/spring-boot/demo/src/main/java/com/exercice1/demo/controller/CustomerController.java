@@ -1,5 +1,6 @@
 package com.exercice1.demo.controller;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,11 +31,13 @@ public class CustomerController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or @securityUtils.isOwner(#id, authentication)")
     public CustomerResponse getCustomerById(@PathVariable Long id) {
         return customerService.getCustomerById(id);
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
     public PagedResponse<CustomerResponse> getAllCustomers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -46,11 +49,13 @@ public class CustomerController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or @securityUtils.isOwner(#id, authentication)")
     public CustomerResponse updateCustomerById(@PathVariable Long id, @RequestBody CustomerRequest request) {
         return customerService.updateCustomer(id, request);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public String deleteCustomer(@PathVariable Long id) {
         customerService.deleteCustomer(id);
         return "Client supprime";

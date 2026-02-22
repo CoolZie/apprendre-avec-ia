@@ -1,13 +1,18 @@
-# 🚀 Exercice 3 : Fonctionnalités avancées JWT
+# 🚀 Exercice 3 : Fonctionnalités avancées Spring Security
 
 ## 🎯 Objectifs
 
 Implémenter des fonctionnalités avancées de sécurité :
-- ✅ Refresh tokens pour renouveler l'authentification
-- ✅ Logout avec blacklist de tokens
-- ✅ Change password sécurisé
-- ✅ Email verification (simulation)
-- ✅ Rate limiting contre brute force
+- ✅ **Refresh tokens** pour renouveler l'authentification (voir guide séparé)
+- ✅ **Logout** avec révocation de tokens
+- ✅ **Change password** sécurisé
+- ✅ **Email verification** (simulation en logs)
+- ✅ **Rate limiting** contre brute force
+
+> **Note importante** : Pour le **Refresh Token** et **Remember Me**, consulte le guide complet :  
+> 📘 **`formationbackend/spring-security/GUIDE_REFRESH_TOKEN_REMEMBER_ME.md`**
+>
+> Cet exercice se concentre sur les autres fonctionnalités avancées.
 
 ---
 
@@ -15,37 +20,47 @@ Implémenter des fonctionnalités avancées de sécurité :
 
 ### Fonctionnalités Requises
 
-#### 1. Refresh Token
-- Token d'accès : 1 heure
-- Refresh token : 7 jours
-- Endpoint `/api/auth/refresh` pour renouveler
+#### 1. Refresh Token & Remember Me
+> ✅ **Voir le guide dédié** : `GUIDE_REFRESH_TOKEN_REMEMBER_ME.md`
+> 
+> Le guide contient :
+> - Explications conceptuelles complètes
+> - Architecture technique avec diagrammes
+> - Implémentation étape par étape (11 étapes)
+> - Tests et validation
+> 
+> Fais d'abord le guide refresh token avant de continuer cet exercice.
 
-#### 2. Logout
-- Invalider les tokens actifs
-- Blacklist en DB ou Redis (simulation avec Map)
+#### 2. Logout sécurisé
+- Révoquer le refresh token en DB
+- Optionnel : Blacklist des access tokens
+- Endpoint `/api/auth/logout`
 
 #### 3. Change Password
 - Vérifier l'ancien mot de passe
-- Valider le nouveau (min 8 chars, complexity)
-- Invalider tous les tokens existants
+- Valider le nouveau (min 8 chars, uppercase/lowercase/digit)
+- Invalider tous les refresh tokens existants
+- Envoyer email de notification
 
 #### 4. Email Verification (Simulation)
-- Générer un token de vérification
+- Générer un token de vérification à l'inscription
 - Endpoint `/api/auth/verify/{token}`
-- User pas activé tant que non vérifié
+- User pas actif tant que non vérifié
+- Bloquer login si email non vérifié
 
 #### 5. Rate Limiting
-- Max 5 tentatives de login par heure
-- Bloquer temporairement après échecs répétés
+- Max 5 tentatives de login par utilisateur
+- Bloquer temporairement (1h) après échecs répétés
+- Afficher tentatives restantes
 
-### Endpoints à créer
+### Endpoints à créer/modifier
 
 | Méthode | Route | Description |
 |---------|-------|-------------|
-| POST | `/api/auth/refresh` | Renouveler access token |
-| POST | `/api/auth/logout` | Se déconnecter (blacklist token) |
+| POST | `/api/auth/refresh` | ✅ Voir GUIDE_REFRESH_TOKEN_REMEMBER_ME.md |
+| POST | `/api/auth/logout` | Se déconnecter (révoque refresh token) |
 | POST | `/api/auth/change-password` | Changer mot de passe |
-| POST | `/api/auth/verify/{token}` | Vérifier email |
+| GET | `/api/auth/verify/{token}` | Vérifier email |
 | POST | `/api/auth/resend-verification` | Renvoyer email de vérification |
 
 ---
@@ -53,37 +68,46 @@ Implémenter des fonctionnalités avancées de sécurité :
 ## 📐 Architecture
 
 ```
-src/main/java/com/formation/security/
+src/main/java/com/exercice1/security/
 ├── model/
 │   ├── User.java                    # +enabled, +verificationToken
-│   ├── RefreshToken.java            # Nouveau
-│   └── TokenBlacklist.java          # Nouveau
+│   └── RefreshToken.java            # ✅ Voir guide refresh token
 ├── repository/
-│   ├── RefreshTokenRepository.java  # Nouveau
-│   └── TokenBlacklistRepository.java # Nouveau
+│   ├── RefreshTokenRepository.java  # ✅ Voir guide refresh token
+│   └── UserRepository.java
 ├── service/
-│   ├── RefreshTokenService.java     # Nouveau
-│   ├── TokenBlacklistService.java   # Nouveau
-│   ├── EmailService.java            # Nouveau (simulation)
-│   └── LoginAttemptService.java     # Nouveau
+│   ├── RefreshTokenService.java     # ✅ Voir guide refresh token
+│   ├── EmailService.java            # Nouveau (simulation logs)
+│   └── LoginAttemptService.java     # Nouveau (rate limiting)
 ├── controller/
 │   └── AuthController.java          # Enrichi
 ├── dto/
-│   ├── RefreshTokenRequest.java     # Nouveau
+│   ├── RefreshTokenRequest.java     # ✅ Voir guide refresh token
 │   ├── ChangePasswordRequest.java   # Nouveau
-│   └── TokenResponse.java           # Nouveau
-└── security/
-    └── JwtAuthenticationFilter.java # +blacklist check
+│   └── VerificationRequest.java     # Nouveau
+└── exception/
+    └── AccountBlockedException.java # Nouveau
 ```
 
 ---
 
 ## 🛠️ Instructions
 
+### Pré-requis : Implémenter Refresh Token
+
+> ⚠️ **IMPORTANT** : Avant de commencer cet exercice, suis le guide :
+> 
+> **`formationbackend/spring-security/GUIDE_REFRESH_TOKEN_REMEMBER_ME.md`**
+>
+> Une fois terminé, reviens ici pour ajouter les fonctionnalités suivantes.
+
+---
+
 ### Étape 1 : Modifier User pour email verification
 
-**Fichier** : `model/User.java`
+**Fichier** : `security/model/User.java`
 
+**Ajouter les champs** :
 ```java
 @Entity
 @Table(name = "users")
@@ -107,7 +131,7 @@ public class User {
     private String password;
     
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "user_roles")
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "role")
     @Builder.Default
     private Set<String> roles = new HashSet<>();
@@ -129,124 +153,755 @@ public class User {
 }
 ```
 
-### Étape 2 : Créer l'entité RefreshToken
+**💡 Explication** :
+- `enabled` : L'utilisateur ne peut se connecter qu'après validation email
+- `verificationToken` : UUID aléatoire envoyé dans l'email
+- `verificationTokenExpiry` : Le token expire après 24h
 
-**Fichier** : `model/RefreshToken.java`
+---
 
-```java
-@Entity
-@Table(name = "refresh_tokens")
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class RefreshToken {
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    
-    @Column(nullable = false, unique = true)
-    private String token;
-    
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-    
-    @Column(nullable = false)
-    private LocalDateTime expiryDate;
-    
-    @CreationTimestamp
-    private LocalDateTime createdAt;
-    
-    public boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiryDate);
-    }
-}
-```
+### Étape 2 : Créer le service EmailService (Simulation)
 
-### Étape 3 : Créer l'entité TokenBlacklist
-
-**Fichier** : `model/TokenBlacklist.java`
+**Fichier** : `security/service/EmailService.java` (NOUVEAU)
 
 ```java
-@Entity
-@Table(name = "token_blacklist")
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class TokenBlacklist {
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String token;
-    
-    @Column(nullable = false)
-    private LocalDateTime expiryDate;
-    
-    @CreationTimestamp
-    private LocalDateTime blacklistedAt;
-    
-    public boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiryDate);
-    }
-}
-```
+package com.exercice1.security.service;
 
-### Étape 4 : Créer les Repositories
+import org.springframework.stereotype.Service;
 
-**RefreshTokenRepository.java** :
-```java
-public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
-    Optional<RefreshToken> findByToken(String token);
-    void deleteByUser(User user);
-    
-    @Modifying
-    @Query("DELETE FROM RefreshToken rt WHERE rt.expiryDate < :now")
-    void deleteExpiredTokens(LocalDateTime now);
-}
-```
+import lombok.extern.slf4j.Slf4j;
 
-**TokenBlacklistRepository.java** :
-```java
-public interface TokenBlacklistRepository extends JpaRepository<TokenBlacklist, Long> {
-    boolean existsByToken(String token);
-    
-    @Modifying
-    @Query("DELETE FROM TokenBlacklist tb WHERE tb.expiryDate < :now")
-    void deleteExpiredTokens(LocalDateTime now);
-}
-```
-
-### Étape 5 : Créer RefreshTokenService
-
-**Fichier** : `service/RefreshTokenService.java`
-
-```java
 @Service
+@Slf4j
+public class EmailService {
+    
+    /**
+     * Simule l'envoi d'un email de vérification
+     * En production : utiliser JavaMailSender ou SendGrid/Mailgun
+     */
+    public void sendVerificationEmail(String to, String token) {
+        String verificationLink = "http://localhost:8080/api/auth/verify/" + token;
+        
+        log.info("╔════════════════════════════════════════╗");
+        log.info("║     EMAIL DE VÉRIFICATION (SIMULATION)      ║");
+        log.info("╠════════════════════════════════════════╣");
+        log.info("║ To: {}", to);
+        log.info("║ Subject: Vérifiez votre adresse email");
+        log.info("║ ");
+        log.info("║ Bonjour,");
+        log.info("║ ");
+        log.info("║ Cliquez sur le lien pour vérifier votre email :");
+        log.info("║ {}", verificationLink);
+        log.info("║ ");
+        log.info("║ Ce lien expire dans 24 heures.");
+        log.info("╚════════════════════════════════════════╝");
+    }
+    
+    /**
+     * Simule l'envoi d'un email de notification de changement de password
+     */
+    public void sendPasswordChangedEmail(String to, String username) {
+        log.info("╔════════════════════════════════════════╗");
+        log.info("║   MOT DE PASSE MODIFIÉ (SIMULATION)    ║");
+        log.info("╠════════════════════════════════════════╣");
+        log.info("║ To: {}", to);
+        log.info("║ Subject: Votre mot de passe a été modifié");
+        log.info("║ ");
+        log.info("║ Bonjour {},", username);
+        log.info("║ ");
+        log.info("║ Votre mot de passe a été modifié avec succès.");
+        log.info("║ ");
+        log.info("║ Si vous n'êtes pas à l'origine de ce changement,");
+        log.info("║ contactez immédiatement le support.");
+        log.info("╚════════════════════════════════════════╝");
+    }
+}
+```
+
+**💡 Explication** :
+- Simule l'envoi d'emails en affichant dans les logs
+- En production, utiliser `JavaMailSender` ou API externe
+
+---
+
+### Étape 3 : Créer le service LoginAttemptService (Rate Limiting)
+
+**Fichier** : `security/service/LoginAttemptService.java` (NOUVEAU)
+
+```java
+package com.exercice1.security.service;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.springframework.stereotype.Service;
+
+@Service
+public class LoginAttemptService {
+    
+    private static final int MAX_ATTEMPTS = 5;
+    private static final int BLOCK_DURATION_HOURS = 1;
+    
+    // Map : username -> nombre de tentatives
+    private final Map<String, Integer> attemptsCache = new ConcurrentHashMap<>();
+    
+    // Map : username -> date de fin de blocage
+    private final Map<String, LocalDateTime> blockCache = new ConcurrentHashMap<>();
+    
+    /**
+     * Appelé après un login réussi
+     */
+    public void loginSucceeded(String username) {
+        attemptsCache.remove(username);
+        blockCache.remove(username);
+    }
+    
+    /**
+     * Appelé après un échec de login
+     */
+    public void loginFailed(String username) {
+        int attempts = attemptsCache.getOrDefault(username, 0);
+        attempts++;
+        attemptsCache.put(username, attempts);
+        
+        if (attempts >= MAX_ATTEMPTS) {
+            blockCache.put(username, LocalDateTime.now().plusHours(BLOCK_DURATION_HOURS));
+        }
+    }
+    
+    /**
+     * Vérifie si un utilisateur est bloqué
+     */
+    public boolean isBlocked(String username) {
+        if (!blockCache.containsKey(username)) {
+            return false;
+        }
+        
+        LocalDateTime blockUntil = blockCache.get(username);
+        if (LocalDateTime.now().isAfter(blockUntil)) {
+            // Le blocage est expiré
+            blockCache.remove(username);
+            attemptsCache.remove(username);
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Nombre de tentatives restantes avant blocage
+     */
+    public int getRemainingAttempts(String username) {
+        int attempts = attemptsCache.getOrDefault(username, 0);
+        return Math.max(0, MAX_ATTEMPTS - attempts);
+    }
+    
+    /**
+     * Temps restant de blocage (en minutes)
+     */
+    public long getRemainingBlockTime(String username) {
+        if (!blockCache.containsKey(username)) {
+            return 0;
+        }
+        
+        LocalDateTime blockUntil = blockCache.get(username);
+        long minutes = java.time.Duration.between(LocalDateTime.now(), blockUntil).toMinutes();
+        return Math.max(0, minutes);
+    }
+}
+```
+
+**💡 Explication** :
+- `ConcurrentHashMap` : Thread-safe pour accès concurrent
+- Après 5 échecs → blocage 1h
+- Login réussi → reset compteur
+
+---
+
+### Étape 4 : Créer les DTOs
+
+**ChangePasswordRequest.java** (NOUVEAU) :
+```java
+package com.exercice1.security.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+
+@Data
+public class ChangePasswordRequest {
+    
+    @NotBlank(message = "Old password is required")
+    private String oldPassword;
+    
+    @NotBlank(message = "New password is required")
+    @Size(min = 8, message = "Password must be at least 8 characters")
+    @Pattern(
+        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).*$",
+        message = "Password must contain at least one uppercase letter, one lowercase letter, and one digit"
+    )
+    private String newPassword;
+}
+```
+
+**VerificationRequest.java** (NOUVEAU) :
+```java
+package com.exercice1.security.dto;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+
+@Data
+public class VerificationRequest {
+    
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
+    private String email;
+}
+```
+
+---
+
+### Étape 5 : Créer l'exception AccountBlockedException
+
+**Fichier** : `security/exception/AccountBlockedException.java` (NOUVEAU)
+
+```java
+package com.exercice1.security.exception;
+
+public class AccountBlockedException extends RuntimeException {
+    public AccountBlockedException(String message) {
+        super(message);
+    }
+}
+```
+
+**Ajouter le handler dans SecurityExceptionHandler.java** :
+```java
+@ExceptionHandler(AccountBlockedException.class)
+public ResponseEntity<ErrorResponse> handleAccountBlocked(AccountBlockedException ex) {
+    return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+        .body(new ErrorResponse(ex.getMessage()));
+}
+```
+
+---
+
+### Étape 6 : Modifier AuthController
+
+**Fichier** : `security/controller/AuthController.java`
+
+**Ajouter les injections** :
+```java
+@RestController
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
-public class RefreshTokenService {
+public class AuthController {
     
-    @Value("${jwt.refresh-expiration}")
-    private long refreshExpiration;
+    private final AuthenticationManager authenticationManager;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;  // ✅ Déjà ajouté (guide refresh)
+    private final EmailService emailService;                // ✅ NOUVEAU
+    private final LoginAttemptService loginAttemptService;  // ✅ NOUVEAU
     
-    private final RefreshTokenRepository refreshTokenRepository;
+    // ... reste du code
+}
+```
+
+**Modifier la méthode `register()`** pour ajouter email verification :
+
+```java
+@PostMapping("/register")
+public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+    if (userRepository.existsByUsername(request.getUsername())) {
+        throw new DuplicateResourceException("Username already exists");
+    }
+    if (userRepository.existsByEmail(request.getEmail())) {
+        throw new DuplicateResourceException("Email already exists");
+    }
     
-    public RefreshToken createRefreshToken(User user) {
-        // Supprimer les anciens refresh tokens de l'utilisateur
-        refreshTokenRepository.deleteByUser(user);
+    // Générer token de vérification
+    String verificationToken = UUID.randomUUID().toString();
+    
+    User user = User.builder()
+        .username(request.getUsername())
+        .email(request.getEmail())
+        .password(passwordEncoder.encode(request.getPassword()))
+        .roles(Set.of("ROLE_USER"))
+        .enabled(false)  // ← Pas activé par défaut
+        .verificationToken(verificationToken)
+        .verificationTokenExpiry(LocalDateTime.now().plusHours(24))
+        .build();
+    
+    userRepository.save(user);
+    
+    // Envoyer email de vérification
+    emailService.sendVerificationEmail(user.getEmail(), verificationToken);
+    
+    // Générer tokens (même si non vérifié, pour tester)
+    String accessToken = jwtService.generateToken(toUserDetails(user), false);
+    RefreshToken refreshToken = refreshTokenService.createRefreshToken(user, false);
+    
+    return ResponseEntity.ok(AuthResponse.builder()
+        .accessToken(accessToken)
+        .refreshToken(refreshToken.getToken())
+        .username(user.getUsername())
+        .email(user.getEmail())
+        .tokenType("Bearer")
+        .expiresIn(jwtService.getExpirationTime(false))
+        .build());
+}
+```
+
+**Modifier la méthode `login()`** pour ajouter rate limiting et vérification email :
+
+```java
+@PostMapping("/login")
+public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+    // 1. Vérifier si le compte est bloqué
+    if (loginAttemptService.isBlocked(request.getUsername())) {
+        long remainingMinutes = loginAttemptService.getRemainingBlockTime(request.getUsername());
+        throw new AccountBlockedException(
+            "Account temporarily blocked due to too many failed login attempts. " +
+            "Try again in " + remainingMinutes + " minutes."
+        );
+    }
+    
+    try {
+        // 2. Authentifier
+        authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(
+                request.getUsername(),
+                request.getPassword()
+            )
+        );
         
-        RefreshToken refreshToken = RefreshToken.builder()
-            .user(user)
-            .token(UUID.randomUUID().toString())
-            .expiryDate(LocalDateTime.now().plusSeconds(refreshExpiration / 1000))
-            .build();
+        User user = userRepository.findByUsername(request.getUsername())
+            .orElseThrow();
         
-        return refreshTokenRepository.save(refreshToken);
+        // 3. Vérifier si l'email est vérifié
+        if (!user.isEnabled()) {
+            throw new InvalidDataException(
+                "Email not verified. Please check your inbox and verify your email address."
+            );
+        }
+        
+        // 4. Login réussi → reset tentatives
+        loginAttemptService.loginSucceeded(request.getUsername());
+        
+        // 5. Générer tokens
+        boolean rememberMe = request.isRememberMe();
+        String accessToken = jwtService.generateToken(toUserDetails(user), rememberMe);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user, rememberMe);
+        
+        return ResponseEntity.ok(AuthResponse.builder()
+            .accessToken(accessToken)
+            .refreshToken(refreshToken.getToken())
+            .username(user.getUsername())
+            .email(user.getEmail())
+            .tokenType("Bearer")
+            .expiresIn(jwtService.getExpirationTime(rememberMe))
+            .build());
+            
+    } catch (BadCredentialsException ex) {
+        // 6. Login échoué → incrémenter tentatives
+        loginAttemptService.loginFailed(request.getUsername());
+        int remaining = loginAttemptService.getRemainingAttempts(request.getUsername());
+        
+        throw new InvalidDataException(
+            "Invalid username or password. Remaining attempts: " + remaining
+        );
+    }
+}
+```
+
+**Ajouter l'endpoint `/verify/{token}`** :
+
+```java
+/**
+ * Vérifier l'email avec le token reçu par email
+ */
+@GetMapping("/verify/{token}")
+public ResponseEntity<String> verifyEmail(@PathVariable String token) {
+    User user = userRepository.findByVerificationToken(token)
+        .orElseThrow(() -> new InvalidDataException("Invalid verification token"));
+    
+    // Vérifier si le token n'est pas expiré
+    if (user.getVerificationTokenExpiry().isBefore(LocalDateTime.now())) {
+        throw new InvalidDataException("Verification token has expired");
+    }
+    
+    // Activer l'utilisateur
+    user.setEnabled(true);
+    user.setVerificationToken(null);
+    user.setVerificationTokenExpiry(null);
+    userRepository.save(user);
+    
+    return ResponseEntity.ok("Email verified successfully. You can now login.");
+}
+```
+
+**Ajouter l'endpoint `/resend-verification`** :
+
+```java
+/**
+ * Renvoyer un email de vérification
+ */
+@PostMapping("/resend-verification")
+public ResponseEntity<String> resendVerification(@Valid @RequestBody VerificationRequest request) {
+    User user = userRepository.findByEmail(request.getEmail())
+        .orElseThrow(() -> new InvalidDataException("User not found"));
+    
+    if (user.isEnabled()) {
+        throw new InvalidDataException("Email already verified");
+    }
+    
+    // Générer nouveau token
+    String newToken = UUID.randomUUID().toString();
+    user.setVerificationToken(newToken);
+    user.setVerificationTokenExpiry(LocalDateTime.now().plusHours(24));
+    userRepository.save(user);
+    
+    // Renvoyer email
+    emailService.sendVerificationEmail(user.getEmail(), newToken);
+    
+    return ResponseEntity.ok("Verification email sent. Please check your inbox.");
+}
+```
+
+**Ajouter l'endpoint `/change-password`** :
+
+```java
+/**
+ * Changer le mot de passe de l'utilisateur connecté
+ */
+@PostMapping("/change-password")
+public ResponseEntity<String> changePassword(
+    @AuthenticationPrincipal UserDetails userDetails,
+    @Valid @RequestBody ChangePasswordRequest request) {
+    
+    String username = userDetails.getUsername();
+    User user = userRepository.findByUsername(username)
+        .orElseThrow(() -> new InvalidDataException("User not found"));
+    
+    // Vérifier l'ancien mot de passe
+    if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+        throw new InvalidDataException("Old password is incorrect");
+    }
+    
+    // Vérifier que le nouveau est différent
+    if (request.getOldPassword().equals(request.getNewPassword())) {
+        throw new InvalidDataException("New password must be different from old password");
+    }
+    
+    // Changer le mot de passe
+    user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+    userRepository.save(user);
+    
+    // Invalider tous les refresh tokens de l'utilisateur
+    refreshTokenService.revokeUserTokens(user);
+    
+    // Envoyer email de notification
+    emailService.sendPasswordChangedEmail(user.getEmail(), user.getUsername());
+    
+    return ResponseEntity.ok("Password changed successfully. Please login again.");
+}
+```
+
+---
+
+### Étape 7 : Ajouter findByEmail et findByVerificationToken dans UserRepository
+
+**Fichier** : `security/repository/UserRepository.java`
+
+**Ajouter** :
+```java
+public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByUsername(String username);
+    Optional<User> findByEmail(String email);  // ✅ NOUVEAU
+    Optional<User> findByVerificationToken(String token);  // ✅ NOUVEAU
+    boolean existsByUsername(String username);
+    boolean existsByEmail(String email);  // ✅ NOUVEAU
+}
+```
+
+---
+
+## ✅ Tests et Validation
+
+### Test 1 : Inscription avec email verification
+
+**1. S'inscrire** :
+```bash
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "alice",
+  "email": "alice@example.com",
+  "password": "Password123"
+}
+```
+
+**Résultat** :
+- ✅ 200 OK
+- ✅ Token access et refresh générés
+- ✅ Email de vérification affiché dans les logs
+- ✅ `user.enabled = false` en DB
+
+**2. Vérifier les logs** :
+```
+╔════════════════════════════════════════╗
+║     EMAIL DE VÉRIFICATION (SIMULATION)      ║
+╠════════════════════════════════════════╣
+║ To: alice@example.com
+║ Link: http://localhost:8080/api/auth/verify/<uuid>
+╚════════════════════════════════════════╝
+```
+
+**3. Tenter de se connecter AVANT vérification** :
+```bash
+POST http://localhost:8080/api/auth/login
+{
+  "username": "alice",
+  "password": "Password123"
+}
+```
+
+**Résultat** :
+- ❌ 400 Bad Request
+- Message : "Email not verified. Please check your inbox..."
+
+**4. Vérifier l'email** :
+```bash
+GET http://localhost:8080/api/auth/verify/<uuid-from-logs>
+```
+
+**Résultat** :
+- ✅ 200 OK
+- Message : "Email verified successfully. You can now login."
+- `user.enabled = true` en DB
+
+**5. Se connecter APRÈS vérification** :
+```bash
+POST http://localhost:8080/api/auth/login
+{
+  "username": "alice",
+  "password": "Password123"
+}
+```
+
+**Résultat** :
+- ✅ 200 OK
+- Access token et refresh token générés
+
+---
+
+### Test 2 : Rate Limiting (Brute Force)
+
+**1. Tentative avec mauvais password (5 fois)** :
+```bash
+POST http://localhost:8080/api/auth/login
+{
+  "username": "alice",
+  "password": "WrongPassword"
+}
+```
+
+**Résultats** :
+- Tentative 1 : "Invalid username or password. Remaining attempts: 4"
+- Tentative 2 : "... Remaining attempts: 3"
+- Tentative 3 : "... Remaining attempts: 2"
+- Tentative 4 : "... Remaining attempts: 1"
+- Tentative 5 : "... Remaining attempts: 0"
+
+**2. Tentative 6 (bloqué)** :
+```bash
+POST http://localhost:8080/api/auth/login
+{
+  "username": "alice",
+  "password": "Password123"
+}
+```
+
+**Résultat** :
+- ❌ 429 Too Many Requests
+- Message : "Account temporarily blocked due to too many failed login attempts. Try again in 60 minutes."
+
+**3. Login réussi débloque** :
+- Attendre 1h OU
+- En dev, modifier le code pour réduire la durée de blocage à 1 minute
+- Login réussi → reset compteur
+
+---
+
+### Test 3 : Changement de password
+
+**1. Se connecter** :
+```bash
+POST http://localhost:8080/api/auth/login
+{
+  "username": "alice",
+  "password": "Password123"
+}
+```
+
+**2. Changer le password** :
+```bash
+POST http://localhost:8080/api/auth/change-password
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "oldPassword": "Password123",
+  "newPassword": "NewPassword456"
+}
+```
+
+**Résultat** :
+- ✅ 200 OK
+- Message : "Password changed successfully. Please login again."
+- Email de notification dans les logs
+- Refresh tokens révoqués (vérifier en DB)
+
+**3. Vérifier que le refresh token est invalidé** :
+```bash
+POST http://localhost:8080/api/auth/refresh
+{
+  "refreshToken": "<old_refresh_token>"
+}
+```
+
+**Résultat** :
+- ❌ 400 Bad Request
+- Message : "Invalid refresh token" ou "Refresh token has been revoked"
+
+**4. Se reconnecter avec nouveau password** :
+```bash
+POST http://localhost:8080/api/auth/login
+{
+  "username": "alice",
+  "password": "NewPassword456"
+}
+```
+
+**Résultat** :
+- ✅ 200 OK
+- Nouveaux tokens générés
+
+---
+
+### Test 4 : Renvoyer email de vérification
+
+**1. S'inscrire** :
+```bash
+POST http://localhost:8080/api/auth/register
+{
+  "username": "bob",
+  "email": "bob@example.com",
+  "password": "Password123"
+}
+```
+
+**2. Ne pas vérifier l'email immédiatement**
+
+**3. Demander un renvoi** :
+```bash
+POST http://localhost:8080/api/auth/resend-verification
+Content-Type: application/json
+
+{
+  "email": "bob@example.com"
+}
+```
+
+**Résultat** :
+- ✅ 200 OK
+- Message : "Verification email sent..."
+- Nouveau token généré en DB
+- Email affiché dans les logs
+
+---
+
+## 📝 Récapitulatif
+
+### Ce que tu as appris
+
+1. **Email Verification** :
+   - Génération de token UUID
+   - Expiration de token (24h)
+   - Activation compte après vérification
+   - Blocage login si non vérifié
+
+2. **Rate Limiting** :
+   - Compteur de tentatives par utilisateur
+   - Blocage temporaire (1h)
+   - Reset après login réussi
+   - Protection contre brute force
+
+3. **Change Password** :
+   - Vérification ancien password
+   - Validation nouveau (complexité)
+   - Révocation tokens après changement
+   - Notification email
+
+4. **Logout sécurisé** :
+   - Révocation refresh token (voir guide)
+   - Optionnel : blacklist access tokens
+
+5. **EmailService** :
+   - Simulation en logs (dev)
+   - Production : JavaMailSender ou API externe
+
+---
+
+## 🎯 Critères de Réussite
+
+- [ ] Refresh Token implémenté (GUIDE_REFRESH_TOKEN_REMEMBER_ME.md)
+- [ ] Email verification fonctionnel
+- [ ] Token de vérification expire après 24h
+- [ ] Login bloqué si email non vérifié
+- [ ] Rate limiting : 5 tentatives max, blocage 1h
+- [ ] Change password avec validations
+- [ ] Refresh tokens révoqués après changement password
+- [ ] EmailService affiche dans les logs
+- [ ] Resend verification fonctionne
+- [ ] Tests réussis pour tous les scénarios
+
+---
+
+## 💡 Conseils
+
+1. **Commence par le guide Refresh Token** avant cet exercice
+2. **Teste email verification en premier** (plus simple)
+3. **Rate limiting** : Réduis le blocage à 1 minute en dev
+4. **Vérifie en DB** : tables user_roles, refresh_tokens
+5. **Utilise Postman** : Collections pour USER/MODERATOR/ADMIN
+6. **Logs** : Active DEBUG pour Spring Security si besoin
+7. **Production** : Remplace EmailService par vrai service email
+
+---
+
+## 🚀 Pour aller plus loin (Optionnel)
+
+Si tu veux améliorer encore :
+
+1. **Vraie Blacklist** : Redis pour les access tokens révoqués
+2. **2FA** : Two-Factor Authentication avec TOTP
+3. **OAuth2** : Login avec Google/GitHub
+4. **Audit Log** : Tracer toutes les actions sécurité
+5. **IP Tracking** : Rate limit par IP + username
+6. **Password History** : Empêcher réutilisation anciens passwords
+
+---
+
+**Bon courage ! 🔐🚀**
+
     }
     
     public RefreshToken verifyRefreshToken(String token) {
